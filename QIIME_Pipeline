@@ -74,3 +74,83 @@ qiime metadata tabulate \
   --o-visualization dada2_out/v245_245_ee2_5/denoising_stats.qzv
 
 echo "DONE. Open demux-trimmed.qzv and denoising_stats.qzv to tune trunc lengths."
+
+#Export stats
+qiime metadata tabulate \
+  --m-input-file stats-dada2.qza \
+  --o-visualization stats-dada2.qzv
+
+# Export Feature Table and Representative Sequences
+qiime tools export \
+  --input-path table-dada2.qza \
+  --output-path asv_table
+biom convert -i feature-table.biom -o feature-table-abundance.tsv --to-tsv
+
+# =========================
+# 1) DADA2 stats (view)
+# =========================
+qiime metadata tabulate \
+  --m-input-file stats-dada2.qza \
+  --o-visualization stats-dada2.qzv
+
+
+# =========================
+# 2) Taxonomy assignment (VSEARCH vs SILVA)
+# =========================
+qiime feature-classifier classify-consensus-vsearch \
+  --i-query rep-seqs-dada2.qza \
+  --i-reference-reads /ReyesHD/16s_Amplicon_Seqdata/CleanData/Togo/silva-138-99-seqs.qza \
+  --i-reference-taxonomy /ReyesHD/16s_Amplicon_Seqdata/CleanData/Togo/silva-138-99-tax.qza \
+  --p-maxaccepts 7 \
+  --p-query-cov 0.8 \
+  --p-perc-identity 0.9 \
+  --p-threads 16 \
+  --o-classification taxonomy.qza \
+  --o-search-results search_results.qza
+
+
+# =========================
+# 3) Remove contaminants (chloroplast/mitochondria)
+#    (Optional: also remove Archaea/Eukaryota/Unassigned)
+# =========================
+qiime taxa filter-table \
+  --i-table table-dada2.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-exclude mitochondria,chloroplast \
+  --o-filtered-table table-dada2.noCP.noMT.qza
+
+qiime taxa filter-seqs \
+  --i-sequences rep-seqs-dada2.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-exclude mitochondria,chloroplast \
+  --o-filtered-sequences rep-seqs-dada2.noCP.noMT.qza
+
+# If you ALSO want to remove non-bacterial / unknown assignments, use this instead:
+# --p-exclude mitochondria,chloroplast,Archaea,Eukaryota,Unassigned
+
+
+# =========================
+# 4) Export filtered Feature Table + Rep-seqs
+# =========================
+mkdir -p asv_table_filtered asvs_filtered
+
+qiime tools export \
+  --input-path table-dada2.noCP.noMT.qza \
+  --output-path asv_table_filtered
+
+biom convert \
+  -i asv_table_filtered/feature-table.biom \
+  -o asv_table_filtered/feature-table-abundance.tsv \
+  --to-tsv
+
+qiime tools export \
+  --input-path rep-seqs-dada2.noCP.noMT.qza \
+  --output-path asvs_filtered
+
+
+# =========================
+# 5) Visualize filtered rep-seqs (optional QC)
+# =========================
+qiime feature-table tabulate-seqs \
+  --i-data rep-seqs-dada2.noCP.noMT.qza \
+  --o-visualization rep-seqs-dada2.noCP.noMT.qzv
