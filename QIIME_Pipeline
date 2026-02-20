@@ -98,7 +98,7 @@ qiime metadata tabulate \
 # 2) Taxonomy assignment (VSEARCH vs SILVA)
 # =========================
 qiime feature-classifier classify-consensus-vsearch \
-  --i-query rep-seqs-dada2.qza \
+  --i-query representative_sequences.qza \
   --i-reference-reads /ReyesHD/16s_Amplicon_Seqdata/CleanData/Togo/silva-138-99-seqs.qza \
   --i-reference-taxonomy /ReyesHD/16s_Amplicon_Seqdata/CleanData/Togo/silva-138-99-tax.qza \
   --p-maxaccepts 7 \
