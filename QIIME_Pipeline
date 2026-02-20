@@ -60,8 +60,8 @@ echo "### 4) DADA2 denoise paired"
 qiime dada2 denoise-paired \
   --i-demultiplexed-seqs demux-trimmed.qza \
   --p-n-threads "${THREADS}" \
-  --p-trunc-len-f 245 \
-  --p-trunc-len-r 245 \
+  --p-trunc-len-f 0 \
+  --p-trunc-len-r 0 \
   --p-max-ee-f 2 \
   --p-max-ee-r 5 \
   --p-n-reads-learn 500000 \
