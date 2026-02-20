@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ===== USER EDITS =====
+ENV="qiime2-amplicon-2026.1"
+
+# Directory with RAW (untrimmed) paired-end FASTQs
+RAW_DIR="/ReyesHD/16s_Colombia_TransferProj/raw_reads"
+
+# Manifest for RAW reads (paired-end). Must have 3 columns:
+# sample-id  forward-absolute-filepath  reverse-absolute-filepath
+RAW_MANIFEST="${RAW_DIR}/Manifest.raw.auto.tsv"
+
+# Output working directory
+OUT_DIR="/ReyesHD/16s_Colombia_TransferProj/qiime2_retrim_v3v4"
+THREADS=12
+
+# Primers (V3–V4)
+FWD_PRIMER="CCTAYGGGRBGCASCAG"
+REV_PRIMER="GGACTACNNGGGTATCTAAT"
+# ======================
+
+source ~/miniforge3/etc/profile.d/conda.sh
+conda activate "${ENV}"
+
+mkdir -p "${OUT_DIR}"
+cd "${OUT_DIR}"
+
+echo "### 1) Import raw reads"
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path "${RAW_MANIFEST}" \
+  --output-path demux-raw.qza \
+  --input-format PairedEndFastqManifestPhred33V2
+
+echo "### 2) Trim primers with cutadapt (keeps reads long; removes primers wherever found)"
+# Notes:
+# - --p-front-f/--p-front-r remove primers from the 5' end.
+# - --p-adapter-f/--p-adapter-r remove the reverse-complement primer if it appears at the 3' end.
+# - --p-discard-untrimmed keeps only reads where primers are found (usually desired for amplicons).
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences demux-raw.qza \
+  --p-cores "${THREADS}" \
+  --p-front-f "${FWD_PRIMER}" \
+  --p-front-r "${REV_PRIMER}" \
+  --p-adapter-f "${REV_PRIMER}" \
+  --p-adapter-r "${FWD_PRIMER}" \
+  --p-discard-untrimmed \
+  --o-trimmed-sequences demux-trimmed.qza \
+  --o-modified-sequences demux-modified.qza
+
+echo "### 3) Summarize trimmed reads (check lengths/quality)"
+qiime demux summarize \
+  --i-data demux-trimmed.qza \
+  --o-visualization demux-trimmed.qzv
+
+echo "### 4) DADA2 denoise paired"
+# Start conservative: keep reads long to ensure overlap for ~460 bp V3–V4
+# Then tune trunc lengths based on demux-trimmed.qzv quality + denoising_stats.qzv
+qiime dada2 denoise-paired \
+  --i-demultiplexed-seqs demux-trimmed.qza \
+  --p-n-threads "${THREADS}" \
+  --p-trunc-len-f 245 \
+  --p-trunc-len-r 245 \
+  --p-max-ee-f 2 \
+  --p-max-ee-r 5 \
+  --p-n-reads-learn 500000 \
+  --p-chimera-method consensus \
+  --output-dir dada2_out/v245_245_ee2_5
+
+echo "### 5) Denoising stats"
+qiime metadata tabulate \
+  --m-input-file dada2_out/v245_245_ee2_5/denoising_stats.qza \
+  --o-visualization dada2_out/v245_245_ee2_5/denoising_stats.qzv
+
+echo "DONE. Open demux-trimmed.qzv and denoising_stats.qzv to tune trunc lengths."
