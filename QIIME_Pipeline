@@ -115,13 +115,13 @@ qiime feature-classifier classify-consensus-vsearch \
 qiime taxa filter-table \
   --i-table table.qza \
   --i-taxonomy taxonomy.qza \
-  --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+  --p-exclude mitochondria,mt,chloroplast,cp,Eukaryota,Unassigned \
   --o-filtered-table table_filtered.qza
 
 qiime taxa filter-seqs \
   --i-sequences representative_sequences.qza \
   --i-taxonomy taxonomy.qza \
- --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+ --p-exclude mitochondria,mt,chloroplast,cp,Eukaryota,Unassigned \
   --o-filtered-sequences rep-seqs-dada2_filtered.qza
 
 # If you ALSO want to remove non-bacterial / unknown assignments, use this instead:
