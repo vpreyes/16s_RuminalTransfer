@@ -82,7 +82,7 @@ qiime metadata tabulate \
 
 # Export Feature Table and Representative Sequences
 qiime tools export \
-  --input-path table-dada2.qza \
+  --input-path table.qza \
   --output-path asv_table
 biom convert -i feature-table.biom -o feature-table-abundance.tsv --to-tsv
 
@@ -108,26 +108,24 @@ qiime feature-classifier classify-consensus-vsearch \
   --o-classification taxonomy.qza \
   --o-search-results search_results.qza
 
-
 # =========================
-# 3) Remove contaminants (chloroplast/mitochondria)
-#    (Optional: also remove Archaea/Eukaryota/Unassigned)
+# 3) Remove contaminants (chloroplast/mitochondria/Eukaryota/Unassigned)
+#    (Optional: also remove )
 # =========================
 qiime taxa filter-table \
-  --i-table table-dada2.qza \
+  --i-table table.qza \
   --i-taxonomy taxonomy.qza \
-  --p-exclude mitochondria,chloroplast \
-  --o-filtered-table table-dada2.noCP.noMT.qza
+  --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+  --o-filtered-table table_filtered.qza
 
 qiime taxa filter-seqs \
-  --i-sequences rep-seqs-dada2.qza \
+  --i-sequences representative_sequences.qza \
   --i-taxonomy taxonomy.qza \
-  --p-exclude mitochondria,chloroplast \
-  --o-filtered-sequences rep-seqs-dada2.noCP.noMT.qza
+ --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned \
+  --o-filtered-sequences rep-seqs-dada2_filtered.qza
 
 # If you ALSO want to remove non-bacterial / unknown assignments, use this instead:
-# --p-exclude mitochondria,chloroplast,Archaea,Eukaryota,Unassigned
-
+# --p-exclude mitochondria,chloroplast,Eukaryota,Unassigned
 
 # =========================
 # 4) Export filtered Feature Table + Rep-seqs
@@ -135,7 +133,7 @@ qiime taxa filter-seqs \
 mkdir -p asv_table_filtered asvs_filtered
 
 qiime tools export \
-  --input-path table-dada2.noCP.noMT.qza \
+  --input-path table_filtered.qza \
   --output-path asv_table_filtered
 
 biom convert \
@@ -144,10 +142,21 @@ biom convert \
   --to-tsv
 
 qiime tools export \
-  --input-path rep-seqs-dada2.noCP.noMT.qza \
+  --input-path rep-seqs-dada2_filtered.qza \
   --output-path asvs_filtered
 
-
+# =========================
+# 5) Make tree
+# =========================
+qiime phylogeny align-to-tree-mafft-fasttree \
+--i-sequences rep-seqs-dada2_filtered.qza \
+--o-alignment tree/aligned_16s_representative_seqs.qza \
+--o-masked-alignment tree/masked_aligned_16s_representative_seqs.qza \
+--o-tree tree/16s_unrooted_tree.qza \
+--o-rooted-tree tree/16s_rooted_tree.qza \
+--p-n-threads 8 \
+--p-parttree false \
+--verbose
 # =========================
 # 5) Visualize filtered rep-seqs (optional QC)
 # =========================
