@@ -168,5 +168,5 @@ qiime tools export \
 # 5) Visualize filtered rep-seqs (optional QC)
 # =========================
 qiime feature-table tabulate-seqs \
-  --i-data rep-seqs-dada2.noCP.noMT.qza \
-  --o-visualization rep-seqs-dada2.noCP.noMT.qzv
+  --i-data rep-seqs-dada2_filtered.qza \
+  --o-visualization rep-seqs-dada2_filtered.qzv
