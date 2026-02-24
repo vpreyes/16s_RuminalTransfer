@@ -156,7 +156,7 @@ qiime phylogeny align-to-tree-mafft-fasttree \
 --o-masked-alignment tree_filt/masked_aligned_16s_representative_seqs.qza \
 --o-tree tree_filt/16s_unrooted_tree.qza \
 --o-rooted-tree tree_filt/16s_rooted_tree.qza \
---p-n-threads 8 \
+--p-n-threads 16 \
 --p-parttree false \
 --verbose
 
