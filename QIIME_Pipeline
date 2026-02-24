@@ -148,15 +148,22 @@ qiime tools export \
 # =========================
 # 5) Make tree
 # =========================
+mkdir tree_filt
+
 qiime phylogeny align-to-tree-mafft-fasttree \
 --i-sequences rep-seqs-dada2_filtered.qza \
---o-alignment tree/aligned_16s_representative_seqs.qza \
---o-masked-alignment tree/masked_aligned_16s_representative_seqs.qza \
---o-tree tree/16s_unrooted_tree.qza \
---o-rooted-tree tree/16s_rooted_tree.qza \
+--o-alignment tree_filt/aligned_16s_representative_seqs.qza \
+--o-masked-alignment tree_filt/masked_aligned_16s_representative_seqs.qza \
+--o-tree tree_filt/16s_unrooted_tree.qza \
+--o-rooted-tree tree_filt/16s_rooted_tree.qza \
 --p-n-threads 8 \
 --p-parttree false \
 --verbose
+
+qiime tools export \
+--input-path tree_filt/16s_unrooted_tree_filt.qza \
+--output-path tree_filt/unrooted_nwk
+
 # =========================
 # 5) Visualize filtered rep-seqs (optional QC)
 # =========================
